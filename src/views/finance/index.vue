@@ -393,7 +393,6 @@ export default {
     padding: 10px 10px 50px 10px;
     border-radius: 8px;
     background-color: #fff;
-    overflow: hidden;
   }
   .head-region{
     display: flex;
@@ -416,6 +415,7 @@ export default {
       .chart{
         width: 100%;
         height:25rem;
+        overflow: hidden;
       }
     }
     .chart-region:last-child{
