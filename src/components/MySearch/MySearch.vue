@@ -78,7 +78,7 @@ export default {
       let tempList = []
       this.keyType.map(keyType => {
         tempList.push({
-          label: '搜索【' + keyType.label + '】: ' + queryString,
+          label: '【' + keyType.label + '】: ' + queryString,
           key: keyType.name,
           value: queryString
         })

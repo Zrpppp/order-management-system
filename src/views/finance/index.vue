@@ -393,6 +393,7 @@ export default {
     padding: 10px 10px 50px 10px;
     border-radius: 8px;
     background-color: #fff;
+    overflow: hidden;
   }
   .head-region{
     display: flex;
