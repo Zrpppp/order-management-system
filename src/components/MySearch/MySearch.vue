@@ -136,15 +136,25 @@ export default {
     height: 25px;
     line-height: 25px;
   }
+  &:hover ::v-deep input{
+      width:200px;
+      padding: 0 6px;
+  }
+  &:hover .icon-box {
+      margin-right: 0;
+    }
+  &:hover .icon-box .icon{
+      color: #fff;
+    }
 }
-.search-box:hover ::v-deep input{
-  width:200px;
-  padding: 0 6px;
-}
-.search-box:hover .icon-box {
-  margin-right: 0;
-}
-.search-box:hover .icon-box .icon{
-  color: #fff;
-}
+//.search-box:hover ::v-deep input{
+//  width:200px;
+//  padding: 0 6px;
+//}
+//.search-box:hover .icon-box {
+//  margin-right: 0;
+//}
+//.search-box:hover .icon-box .icon{
+//  color: #fff;
+//}
 </style>

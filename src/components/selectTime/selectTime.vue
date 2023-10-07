@@ -81,7 +81,6 @@ export default {
   },
   methods: {
     changeTimeEvent() {
-      console.log(this.limitQuery.time)
       this.$emit('updateList')
     }
   }
