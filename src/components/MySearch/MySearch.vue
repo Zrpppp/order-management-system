@@ -1,11 +1,12 @@
 <template>
   <div class="search-box">
     <el-autocomplete
-      ref="input"
+      ref="search-input"
       class="search-input"
+      :class="{active: isOpen}"
       popper-class="autocomplete"
+      placement="bottom-end"
       :size="size"
-      clearable
       v-model="value"
       :fetch-suggestions="makeKeyType"
       @select="selectKeyType"
@@ -14,8 +15,11 @@
         <div class="name">{{ item.label }}</div>
       </template>
     </el-autocomplete>
-    <div class="icon-box"><i class="vxe-icon-search icon"/></div>
-    <el-tag class="search-tag" size="medium" closable type="info" v-if="keyLabel !==''" :disable-transitions="true" @close="clear">{{ keyLabel }}</el-tag>
+    <el-tag class="search-tag" size="mini" closable type="info" v-if="keyLabel !==''" :disable-transitions="true" @close="clear">{{ keyLabel }}</el-tag>
+    <div class="icon-box" @click="searchClick">
+      <i class="vxe-icon-search icon" :class="{activeIcon:!isOpen}"/>
+      <i class="vxe-icon-close icon" :class="{activeIcon:isOpen}"/>
+    </div>
   </div>
 
 </template>
@@ -71,6 +75,9 @@ export default {
 
   },
   methods: {
+    searchClick(){
+      this.isOpen = !this.isOpen
+    },
     clear() {
       this.value = ''
     },
@@ -98,10 +105,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep .el-autocomplete-suggestion .el-popper .autocomplete {
+  width: 300px !important;
+}
 .search-box{
   border-radius: 30px;
   background-color: #fff;
-  padding-left: 10px;
   color: #2f3640;
   display: flex;
   align-items: center;
@@ -109,52 +118,54 @@ export default {
   margin-right:10px;
   //box-shadow: 2px 2px 3px 1px rgba(0, 0, 0, 0.1);
   border: 1px solid #dcdfe6;
-  ::v-deep input{
+  padding: 0 4px;
+  .search-input{
     width:0;
-    border:none;
-    background: none;
-    outline: none;
-    float: left;
-    padding: 0;
-    color: #2f3640;
-    transition: 0.5s ease-in-out ;
+    opacity: 0;
+    transition: 0.5s ease-in-out;
+    ::v-deep input{
+      width:250px;
+      border:none;
+      background: none;
+      outline: none;
+      padding: 0;
+      color: #2f3640;
+    }
   }
   .icon-box{
-    margin-right: 10px;
-    transition: 0.4s ease-in-out;
+    width: 21px;
+    height: 21px;
+    padding-top: 2px;
+    background: #2f3640;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
     .icon{
-      color: #2f3640;
+      opacity: 0;
+      color: #FFFFFF;
       font-size: 12px;
+      transition: opacity 0.25s ;
+      position: absolute;
+    }
+    .activeIcon{
+      opacity: 1;
     }
   }
   .search-tag{
     border:none;
     background-color: #2f3640;
+    margin-right: 4px;
     color: #fff;
-    margin-right: 10px;
     border-radius: 30px;
-    height: 25px;
-    line-height: 25px;
   }
-  &:hover ::v-deep input{
-      width:200px;
-      padding: 0 6px;
+  .active{
+    width:220px;
+    opacity: 1;
+    margin-left:4px;
   }
-  &:hover .icon-box {
-      margin-right: 0;
-    }
-  &:hover .icon-box .icon{
-      color: #fff;
-    }
+
+
 }
-//.search-box:hover ::v-deep input{
-//  width:200px;
-//  padding: 0 6px;
-//}
-//.search-box:hover .icon-box {
-//  margin-right: 0;
-//}
-//.search-box:hover .icon-box .icon{
-//  color: #fff;
-//}
+
 </style>
