@@ -12,11 +12,13 @@
       @select="selectKeyType"
       :placeholder="placeholder">
       <template slot-scope="{ item }" class="search-select-content">
-        <div class="name">{{ item.label }}</div>
+        <div class="search-item">{{ item.label }}</div>
       </template>
     </el-autocomplete>
-    <el-tag class="search-tag" size="mini" closable type="info" v-if="keyLabel !==''" :disable-transitions="true" @close="clear">{{ keyLabel }}</el-tag>
-    <div class="icon-box" @click="searchClick">
+    <transition name="fade">
+      <el-tag class="search-tag" size="mini" closable type="info" v-if="keyLabel"  disable-transitions @close="clear">{{ keyLabel }}</el-tag>
+    </transition>
+    <div class="icon-box" :class="{activeIconBox:isOpen}" @click="searchClick">
       <i class="vxe-icon-search icon" :class="{activeIcon:!isOpen}"/>
       <i class="vxe-icon-close icon" :class="{activeIcon:isOpen}"/>
     </div>
@@ -52,7 +54,7 @@ export default {
       default: () => {
         return 'mini'
       }
-    }
+    },
   },
   data() {
     return {
@@ -98,6 +100,7 @@ export default {
       this.limitQuery.searchKey = val.key
       this.limitQuery.searchValue = val.value
       this.keyLabel = val.label
+      this.isOpen = false
       this.$emit('updateList')
     },
   }
@@ -107,6 +110,20 @@ export default {
 <style lang="scss" scoped>
 ::v-deep .el-autocomplete-suggestion .el-popper .autocomplete {
   width: 300px !important;
+}
+.fade-enter-active,  {
+  transition: all .25s ease-in-out;
+}
+.fade-enter{
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.fade-leave-active {
+  transition: all .25s ease-in-out;
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 .search-box{
   border-radius: 30px;
@@ -122,7 +139,7 @@ export default {
   .search-input{
     width:0;
     opacity: 0;
-    transition: 0.5s ease-in-out;
+    transition: all 0.5s cubic-bezier(.9,0,.3,.9);
     ::v-deep input{
       width:250px;
       border:none;
@@ -132,25 +149,29 @@ export default {
       color: #2f3640;
     }
   }
+
   .icon-box{
-    width: 21px;
-    height: 21px;
-    padding-top: 2px;
+    width: 20px;
+    height: 20px;
     background: #2f3640;
     border-radius: 50%;
     display: grid;
     place-items: center;
     cursor: pointer;
+    transition:all .6s cubic-bezier(.9,0,.3,.9);
     .icon{
       opacity: 0;
       color: #FFFFFF;
       font-size: 12px;
-      transition: opacity 0.25s ;
+      transition: opacity .6s cubic-bezier(.9,0,.3,.9);
       position: absolute;
     }
     .activeIcon{
       opacity: 1;
     }
+  }
+  .activeIconBox{
+    transform: rotate(180deg);
   }
   .search-tag{
     border:none;
@@ -158,14 +179,22 @@ export default {
     margin-right: 4px;
     color: #fff;
     border-radius: 30px;
+    text-overflow: ellipsis;
   }
   .active{
-    width:220px;
+    width:260px;
     opacity: 1;
     margin-left:4px;
+    pointer-events: inherit;
   }
-
-
 }
-
+.autocomplete{
+  li{
+    .search-item{
+      font-size: 12px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+  }
+}
 </style>
