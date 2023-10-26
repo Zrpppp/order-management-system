@@ -16,7 +16,9 @@
       </template>
     </el-autocomplete>
     <transition name="fade">
-      <el-tag class="search-tag" size="mini" closable type="info" v-if="keyLabel"  disable-transitions @close="clear">{{ keyLabel }}</el-tag>
+      <el-tag class="search-tag" size="mini" closable type="info" v-if="keyLabel" disable-transitions @close="clear">
+        {{ keyLabel }}
+      </el-tag>
     </transition>
     <div class="icon-box" :class="{activeIconBox:isOpen}" @click="searchClick">
       <i class="vxe-icon-search icon" :class="{activeIcon:!isOpen}"/>
@@ -34,7 +36,8 @@ export default {
       type: Array,
       default: () => {
         return [
-          { label: '订单号', name: 'orderId' },]
+          {label: '订单号', name: 'orderId'},
+        ]
       }
     },
     placeholder: {
@@ -64,36 +67,31 @@ export default {
     }
   },
   watch: {
-    value: {
-      handler: function() {
-        if (this.value === '') {
-          this.keyLabel = ''
-          this.limitQuery.searchKey = ""
-          this.limitQuery.searchValue = ""
-          this.$emit('updateList')
-        }
-      }
-    }
-
+    value(newVal) {
+      if (newVal) return
+      this.keyLabel = ''
+      this.limitQuery.searchKey = ""
+      this.limitQuery.searchValue = ""
+      this.$emit('updateList')
+    },
   },
   methods: {
-    searchClick(){
-      this.isOpen = !this.isOpen
+    searchClick() {
+      this.isOpen = !this.isOpen;
     },
     clear() {
       this.value = ''
     },
     makeKeyType(queryString, cb) {
       let tempList = []
-      this.keyType.map(keyType => {
+      this.keyType.forEach(keyType => {
         tempList.push({
           label: '【' + keyType.label + '】: ' + queryString,
           key: keyType.name,
           value: queryString
         })
       })
-      let results = queryString ? tempList : []
-      cb(results)
+      cb(queryString ? tempList : [])
     },
     selectKeyType(val) {
       this.value = val.value
@@ -111,38 +109,45 @@ export default {
 ::v-deep .el-autocomplete-suggestion .el-popper .autocomplete {
   width: 300px !important;
 }
-.fade-enter-active,  {
+
+.fade-enter-active, {
   transition: all .25s ease-in-out;
 }
-.fade-enter{
+
+.fade-enter {
   opacity: 0;
   transform: translateY(-10px);
 }
+
 .fade-leave-active {
   transition: all .25s ease-in-out;
 }
+
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-10px);
 }
-.search-box{
+
+.search-box {
   border-radius: 30px;
   background-color: #fff;
   color: #2f3640;
   display: flex;
   align-items: center;
   overflow: hidden;
-  margin-right:10px;
+  margin-right: 10px;
   //box-shadow: 2px 2px 3px 1px rgba(0, 0, 0, 0.1);
   border: 1px solid #dcdfe6;
   padding: 0 4px;
-  .search-input{
-    width:0;
+
+  .search-input {
+    width: 0;
     opacity: 0;
-    transition: all 0.5s cubic-bezier(.9,0,.3,.9);
-    ::v-deep input{
-      width:250px;
-      border:none;
+    transition: all 0.5s cubic-bezier(.9, 0, .3, .9);
+
+    ::v-deep input {
+      width: 250px;
+      border: none;
       background: none;
       outline: none;
       padding: 0;
@@ -150,7 +155,7 @@ export default {
     }
   }
 
-  .icon-box{
+  .icon-box {
     width: 20px;
     height: 20px;
     background: #2f3640;
@@ -158,39 +163,45 @@ export default {
     display: grid;
     place-items: center;
     cursor: pointer;
-    transition:all .6s cubic-bezier(.9,0,.3,.9);
-    .icon{
+    transition: all .6s cubic-bezier(.9, 0, .3, .9);
+
+    .icon {
       opacity: 0;
       color: #FFFFFF;
       font-size: 12px;
-      transition: opacity .6s cubic-bezier(.9,0,.3,.9);
+      transition: opacity .6s cubic-bezier(.9, 0, .3, .9);
       position: absolute;
     }
-    .activeIcon{
+
+    .activeIcon {
       opacity: 1;
     }
   }
-  .activeIconBox{
+
+  .activeIconBox {
     transform: rotate(180deg);
   }
-  .search-tag{
-    border:none;
+
+  .search-tag {
+    border: none;
     background-color: #2f3640;
     margin-right: 4px;
     color: #fff;
     border-radius: 30px;
     text-overflow: ellipsis;
   }
-  .active{
-    width:260px;
+
+  .active {
+    width: 260px;
     opacity: 1;
-    margin-left:4px;
+    margin-left: 4px;
     pointer-events: inherit;
   }
 }
-.autocomplete{
-  li{
-    .search-item{
+
+.autocomplete {
+  li {
+    .search-item {
       font-size: 12px;
       text-overflow: ellipsis;
       overflow: hidden;
