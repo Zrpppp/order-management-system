@@ -170,7 +170,7 @@ export default {
       this.dialogVisible = true
     },
     submitFrom:myDebounce(function () {
-      fastPost(baseUrl + this.activeAction, this.activeForm,true).then(res => {
+      fastPost(baseUrl + this.activeAction, this.activeForm,true).then(() => {
           this.dialogVisible = false
           switch (this.activeAction) {
             case 'add':

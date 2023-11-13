@@ -6,7 +6,8 @@ import { getToken } from '@/utils/auth'
 // create an axios instance
 const service = axios.create({
   // baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
-  baseURL: 'https://mock.apifox.cn/m1/3405279-0-default',
+  baseURL: 'https://mock.apifox.cn/m1/3405279-0-default',//云端
+  // baseURL: 'http://127.0.0.1:4523/m1/3202416-0-default/',//本地
   // withCredentials: true, // send cookies when cross-domain requests
   timeout: 5000 // request timeout
 })
@@ -45,33 +46,28 @@ service.interceptors.response.use(
    */
   response => {
     const res = response.data
-
     // if the custom code is not 20000, it is judged as an error.
-    // if (res.code !== 20000) {
-    //   Message({
-    //     message: res.message || 'Error',
-    //     type: 'error',
-    //     duration: 5 * 1000
-    //   })
-    //
-    //   // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
-    //   if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
-    //     // to re-login
-    //     MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-    //       confirmButtonText: 'Re-Login',
-    //       cancelButtonText: 'Cancel',
-    //       type: 'warning'
-    //     }).then(() => {
-    //       store.dispatch('user/resetToken').then(() => {
-    //         location.reload()
-    //       })
-    //     })
-    //   }
-    //   return Promise.reject(new Error(res.message || 'Error'))
-    // } else {
-    //   return res
-    // }
-    if (res.code === 40001) {
+    console.log(res)
+    if (res.code !== 0) {
+      Message({ message: res.message || 'Error', type: 'error', duration: 5 * 1000, showClose: true })
+      // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
+      if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
+        // to re-login
+        MessageBox.confirm('您的登录超时了,请重新登录', '提示', {
+          confirmButtonText: '重新登录',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          store.dispatch('user/resetToken').then(() => {
+            location.reload()
+          })
+        })
+      }
+      return Promise.reject(new Error(res.message || 'Error'))
+    } else {
+      return res
+    }
+    if (response.data.code === 40001) {
       store.dispatch('user/resetToken').then(() => {
         location.reload()
       })
@@ -83,12 +79,10 @@ service.interceptors.response.use(
       fullscreen: true
     });
     loadingInstance.close();
-    // console.log('err' + error) // for debug
     Message({
       message: error.message,
       type: 'error',
-      // duration: 5 * 1000
-      duration: 1500
+      duration: 5 * 1000
     })
     return Promise.reject(error)
   }
