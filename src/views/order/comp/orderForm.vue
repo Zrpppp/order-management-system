@@ -83,7 +83,7 @@
     <div > <i class="header-icon el-icon-info"/> 产品列表 </div>
     <vxe-toolbar :refresh="{query: getProductList}" custom>
       <template #buttons >
-        <my-search :limit-query="limitQuery" @updateList="getProductList" :key-type="keyType"/>
+        <my-search v-if="pageType!=='add'" :limit-query="limitQuery" @updateList="getProductList" :key-type="keyType"/>
         <vxe-button v-if="pageType!=='finance'" size="mini" @click="addClick"><i class="el-icon-plus"/> 新 增</vxe-button>
     <!--<vxe-button v-if="pageType!=='finance'" size="mini" @click="editClick"><i class="el-icon-edit"/> 编 辑</vxe-button>-->
         <vxe-button v-if="pageType!=='finance'" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 删 除</vxe-button>
@@ -191,7 +191,7 @@
             <el-tag effect="dark" size="mini" style="margin-left:50px"> 共{{ logListLength }}条 </el-tag>
           </div>
         </el-divider>
-        <el-timeline :reverse="reverse" >
+        <el-timeline :reverse="reverse" v-loading="drawerLoading">
           <el-timeline-item placement="top" v-for="(item,index) in logList" :timestamp="'开单时间: '+item.time"  type="success">
             <el-card class="box-card" shadow="hover">
               <h4>订单号: {{item.orderNo}}</h4>
@@ -311,6 +311,7 @@ export default {
         {field:'remark',title:'备注'},
       ],
       tempOrderPrice:"",
+      drawerLoading:false,
     }
   },
   created() {
@@ -350,10 +351,8 @@ export default {
       this.loading = true
       fastGet(baseUrl+'getListByOrderId', this.limitQuery).then(res => {
         this.loading = false
-        if (res.code === 0) {
-          res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
-          this.productList = res.data.list
-        }
+        res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
+        this.productList = res.data.list
       })
     },
     cancelFrom(){
@@ -501,25 +500,17 @@ export default {
         this.$notify.success({title: '提示', message: '修改成功!' , position: 'bottom-left'})
       }
     },
-    recordClick(row){
-      this.getRecordById(row.id).then(()=>{
-        this.drawer = true;
-        this.drawerTitle = '产品:【'+row.name+'】'
-      }).catch(err=>{
-        this.$notify.error({title: '获取记录失败!', message: err , position: 'bottom-left'})
-      })
+    async recordClick(row){
+      this.drawerTitle = '产品:【'+row.name+'】';
+      this.drawer = true;
+      this.drawerLoading = true;
+      this.logList = await this.getRecordById(row.id);
+      this.drawerLoading = false;
     },
     getRecordById(id){
       return new Promise((resolve, reject) => {
-        this.loading = true
         fastGet(baseUrl+'getRecordById',{id:id}).then(res=>{
-          this.loading = false
-          if(res.code===0){
-            this.logList = res.data.list
-            resolve()
-          }else {
-            reject(res.message)
-          }
+            resolve(res.data.list)
         })
       })
     },

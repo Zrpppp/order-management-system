@@ -147,7 +147,6 @@ export default {
       this.loading = true
       fastGet(baseUrl+'getList', this.limitQuery,false).then(res => {
         this.loading = false
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.factoryList = res.data.list
         this.total = res.data.total
       })
@@ -170,7 +169,6 @@ export default {
     },
     submitFrom:myDebounce(function () {
       fastPost(baseUrl + this.activeAction, this.activeForm,true).then(res => {
-        if (res.code === 0) {
           this.dialogVisible = false
           switch (this.activeAction) {
             case 'add':
@@ -183,7 +181,6 @@ export default {
               this.multiUpdateEvent()
               break
           }
-        }
       })
     }),
     cancelFrom() {
@@ -212,10 +209,8 @@ export default {
       this.$confirm(message, '提示', this.confirmOptions).then(() => this.submitDelete(ids))
     },
     submitDelete:myDebounce(function (ids) {
-      fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-        if (res.code === 0) {
+      fastPost(baseUrl + 'delete', {ids:ids},true).then(() => {
           ids.map(id => this.factoryList = this.factoryList.filter(item => item.id !== id))
-        }
       })
     }),
     getCheckboxRecordsEvent(action, object) {
@@ -240,7 +235,6 @@ export default {
       this.exportLoading = true
       fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
         this.exportLoading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
         this.exportEvent('厂家列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
       });
     }),

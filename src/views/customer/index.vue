@@ -148,7 +148,6 @@ export default {
       this.loading = true
       fastGet(baseUrl + 'getList', this.limitQuery,false).then(res => {
         this.loading = false
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.customerList = res.data.list
         this.total = res.data.total
         this.isSelect = false
@@ -172,7 +171,6 @@ export default {
     },
     submitFrom:myDebounce(function () {
       fastPost(baseUrl + this.activeAction, this.activeForm,true).then(res => {
-        if (res.code === 0) {
           this.dialogVisible = false
           switch (this.activeAction) {
             case 'add':
@@ -185,7 +183,6 @@ export default {
               this.multiUpdateEvent()
               break
           }
-        }
       })
     }),
     cancelFrom() {
@@ -206,7 +203,7 @@ export default {
     },
     deleteClick() {
       let ids = this.getCheckboxRecordsEvent('删除', '客户')
-      if (ids.length > 0) this.showConfirmForm('正在删除' + ids.length + '个客户', ids)
+      if (ids.length > 0) this.showConfirmForm('正在删除' + ids.length + '个客户,是否继续?', ids)
     },
     deleteRowClick(row) {
       this.submitDelete([row.id])
@@ -215,11 +212,9 @@ export default {
       this.$confirm(message, '提示', this.confirmOptions).then(() => this.submitDelete(ids))
     },
     submitDelete:myDebounce(function (ids) {
-      fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-        if (res.code === 0) {
+      fastPost(baseUrl + 'delete', {ids:ids},true).then(() => {
           this.isSelect = false
           ids.map(id => this.customerList = this.customerList.filter(item => item.id !== id))
-        }
       })
     }),
     getCheckboxRecordsEvent(action, object) {
@@ -244,7 +239,6 @@ export default {
       this.exportLoading = true
       fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
         this.exportLoading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
         this.exportEvent('客户列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
       });
     }),

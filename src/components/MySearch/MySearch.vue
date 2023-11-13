@@ -6,7 +6,8 @@
       :class="{active: isOpen}"
       popper-class="autocomplete"
       placement="bottom-end"
-      :size="size"
+      highlight-first-item
+      size="mini"
       v-model="value"
       :fetch-suggestions="makeKeyType"
       @select="selectKeyType"
@@ -25,7 +26,6 @@
       <i class="vxe-icon-close icon" :class="{activeIcon:isOpen}"/>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -50,12 +50,6 @@ export default {
       type: Object,
       default: () => {
         return {}
-      }
-    },
-    size: {
-      type: String,
-      default: () => {
-        return 'mini'
       }
     },
   },

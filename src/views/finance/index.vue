@@ -223,7 +223,6 @@ export default {
     },
     getFinanceList() {
       fastGet(baseUrl + 'getList', this.limitQuery, false).then(res => {
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.financeList = res.data.list
         this.total = res.data.total
         this.isSelect = false
@@ -237,7 +236,6 @@ export default {
       this.chartsLoading = true
       fastGet(baseUrl + 'getChartsData', this.chartLimitQuery, false).then(res => {
         this.chartsLoading = false
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.chartsList.xAxis.data = res.data.xAxis
         this.chartsList.series[0].data = res.data.yAxis.cost
         this.chartsList.series[1].data = res.data.yAxis.profit
@@ -284,7 +282,6 @@ export default {
     },
     submitFinishEvent(ids) {
       fastPost('/order/finish', {ids: ids}, true).then(res => {
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.getFinanceList()
       })
     },
@@ -312,7 +309,6 @@ export default {
       this.exportLoading = true
       fastGet(baseUrl + 'getList', {limit: 0, page: 1}, false).then((res) => {
         this.exportLoading = false
-        if (res.code !== 0) return this.$notify.error({title: '提示', message: res.message, position: 'bottom-left'})
         this.exportEvent('财务列表【' + formatDate(new Date(), 'yyyy-MM-dd hh:mm:ss') + '】', res.data.list, this.exportColumns)
       });
     }),

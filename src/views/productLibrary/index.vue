@@ -214,7 +214,6 @@ export default {
       this.loading = true
       fastGet(baseUrl+'getList',this.limitQuery,false).then(res=>{
         this.loading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
         res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
         this.productList = res.data.list
         this.total = res.data.total
@@ -265,11 +264,9 @@ export default {
     submitFrom:myDebounce(function () {
       let data = Object.assign({}, this.activeForm)
       delete data.imagesList
-      fastPost(baseUrl + this.activeAction, data,true).then(res => {
-        if (res.code === 0) {
+      fastPost(baseUrl + this.activeAction, data,true).then(() => {
           this.dialogVisible = false
           this.getCustomerList()
-        }
       })
     }),
     cancelFrom() {
@@ -287,9 +284,7 @@ export default {
     },
     submitDelete:myDebounce(function (ids) {
       fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-        if (res.code === 0) {
-          ids.map(id => this.productList = this.productList.filter(item => item.id !== id))
-        }
+        ids.map(id => this.productList = this.productList.filter(item => item.id !== id))
       })
     }),
     getCheckboxRecordsEvent(action, object) {
@@ -324,7 +319,6 @@ export default {
       this.exportLoading = true
       fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
         this.exportLoading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
         this.exportEvent('产品列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
       });
     }),

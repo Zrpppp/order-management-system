@@ -166,7 +166,6 @@ export default {
     },
     submitFrom:myDebounce(function (data) {
       fastPost(baseUrl + this.activeAction, data,true).then(res => {
-        if (res.code === 0) {
           this.dialogVisible = false
           switch (this.activeAction) {
             case 'add':
@@ -179,7 +178,6 @@ export default {
               this.multiUpdateEvent(data)
               break
           }
-        }
       })
     }),
     cancelFrom() {
@@ -209,9 +207,7 @@ export default {
     },
     submitDelete:myDebounce(function (ids) {
       fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-        if (res.code === 0) {
           ids.map(id => this.orderList = this.orderList.filter(item => item.id !== id))
-        }
       })
     }),
     filterCompanyName({cellValue}){
@@ -246,7 +242,6 @@ export default {
       this.exportLoading = true
       fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
         this.exportLoading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
         this.exportEvent('订单列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
       });
     }),
