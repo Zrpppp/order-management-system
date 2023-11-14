@@ -10,20 +10,12 @@ import { getOptions as _getOptions, removeOptions as _removeOptions,getRemoteOpt
  * @returns {*}
  */
 export function fastPost(url, data, isDefault = true) {
-  // let loadingInstance = isDefault?Loading.service({ fullscreen: true }):null;
   return request({ url: url, method: 'post', data }).then((res) => {
-    // loadingInstance.close()
-    if (isDefault) { //可以传入false取消提示
-      const type = res.code === 0 ? 'success' : 'error'
+    if (isDefault) {
       const messages = res.message
-      Notification({
-        title: '处理结果',
-        message: messages ? messages : type,
-        type: type,
-        position: 'bottom-left'
-      })
+      Notification({ title: '请求结果', message: messages ? messages : 'success', type: 'success', position: 'bottom-left', duration: 3 * 1000, showClose: true})
     }
-    return res //返回原来请求结果,可以继续针对结果进行处理
+    return res
   })
 }
 
@@ -35,19 +27,11 @@ export function fastPost(url, data, isDefault = true) {
  * @returns {*}
  */
 export function fastGet(url, params, isDefault = true) {
-  // let loadingInstance = isDefault?Loading.service({ fullscreen: true }):null;
   return request({url: url, method: 'get', params}).then((res) => {
     if (isDefault) { //可以传入false取消提示
-      // loadingInstance.close()
       //如果获取不超过,默认返回错误信息
-      if (res.code !== 0) {
-        Notification({
-          title: '处理结果',
-          message: res.message,
-          type: 'error',
-          position: 'bottom-left'
-        })
-      }
+      const messages = res.message
+      Notification({ title: '处理结果', message:messages ? messages : 'success', type: 'success', position: 'bottom-left',duration: 3 * 1000, showClose: true})
     }
     return res //返回原来请求结果,可以继续针对结果进行处理
   })
