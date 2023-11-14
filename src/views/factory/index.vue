@@ -7,8 +7,8 @@
           <template #buttons>
             <my-search :limit-query="limitQuery" @updateList="searchEvent" :key-type="keyType"/>
             <transition name="fade"><el-tag v-if="checkboxCount" class="count-tag" effect="dark" size="medium" color="#3D7EFF">{{checkboxCount}}</el-tag></transition>
-            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="editClick"><i class="el-icon-edit"/> 编 辑</vxe-button></transition>
-            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 删 除</vxe-button></transition>
+            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="editClick"><i class="el-icon-edit"/> 批量编辑</vxe-button></transition>
+            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 批量删除</vxe-button></transition>
             <vxe-button v-if="pageType==='normal'" size="mini" @click="addClick"><i class="el-icon-plus"/> 新 增</vxe-button>
             <el-dropdown v-if="pageType==='normal'" trigger="click" class="margin" @command="handleExport">
               <vxe-button :loading="exportLoading" type="primary" size="mini">
