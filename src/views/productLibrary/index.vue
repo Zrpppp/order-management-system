@@ -6,18 +6,27 @@
         <vxe-toolbar ref="Toolbar" :refresh="{query: getProductList}" custom class="toolbar">
           <template #buttons>
             <my-search :limit-query="limitQuery" @updateList="searchEvent" :key-type="keyType"/>
+            <transition name="fade"><el-tag v-if="checkboxCount" class="count-tag" effect="dark" size="medium" color="#3D7EFF">{{checkboxCount}}</el-tag></transition>
+            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="editClick"><i class="el-icon-edit"/> 批量编辑</vxe-button></transition>
+            <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 批量删除</vxe-button></transition>
             <vxe-button v-if="pageType==='normal'" size="mini" @click="addClick"><i class="el-icon-plus"/> 新 增</vxe-button>
-            <vxe-button v-if="pageType==='normal'" size="mini" @click="editClick"><i class="el-icon-edit"/> 编 辑</vxe-button>
-            <vxe-button v-if="pageType==='normal'" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 删 除</vxe-button>
-            <vxe-button v-if="pageType==='normal'" size="mini" @click="exportData" :loading="exportLoading"><i class="el-icon-printer"/> 全部导出</vxe-button>
-            <vxe-button v-if="pageType==='normal'" size="mini" @click="exportSelect"><i class="el-icon-thumb"/> 导出选中</vxe-button>
+            <el-dropdown v-if="pageType==='normal'" trigger="click" class="margin" @command="handleExport">
+              <vxe-button :loading="exportLoading" type="primary" size="mini">
+                <i class="el-icon-printer"/> 导 出 <i class="el-icon-arrow-down el-icon--right"/>
+              </vxe-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="exportData">全部导出</el-dropdown-item>
+                <el-dropdown-item command="exportSelect">导出选中</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </template>
         </vxe-toolbar>
       </div>
       <!--表格-->
       <div class="table-content">
-          <vxe-table ref="table" class="table myTable-scrollbar " :data="productList" keep-source stripe resizable show-overflow border :loading="loading"
-                     :row-config="{ isCurrent: true, isHover: true} " :checkbox-config="{range: true ,highlight:true}"  align="center" height="100%" >
+          <vxe-table ref="table" class="table myTable-scrollbar " :data="productList" resizable keep-source stripe show-overflow round :loading="loading"
+                     :row-config="{ isCurrent: true, isHover: true} " :checkbox-config="{range: true ,highlight:true}"  align="center" height="100%"
+                     @checkbox-change="checkboxChange" @checkbox-all="checkboxChange" @checkbox-range-end="checkboxChange" :scroll-y="{enabled: true}">
             <vxe-table-column type="checkbox" width="45" align="center" fixed="left" v-if="pageType==='normal'"/>
             <vxe-table-column title="操作" align="center" width="180" fixed="left">
               <template v-slot="{ row }">
@@ -60,7 +69,7 @@
 
     <!--编辑表单-->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" top="5vh" width="1000px" @close="cancelFrom">
-      <el-form :model="activeForm" label-width="90px" :rules="rules" ref="activeForm" size="mini">
+      <el-form :model="activeForm" label-width="100px" :rules="activeAction==='multiUpdate' ? {} : rules" ref="activeForm" size="mini">
         <el-row>
           <el-col :span="12">
             <el-form-item label="产品名" prop="name">
@@ -117,7 +126,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="cancelFrom" size="mini">取 消</el-button>
-        <el-button type="primary" @click="submitFrom" size="mini">确 定</el-button>
+        <el-button type="primary" @click="submitFromClick" size="mini" :loading="submitButtonLoading">确 定</el-button>
       </span>
     </el-dialog>
 
@@ -138,10 +147,11 @@
 <script>
 import {formatDate, myDebounce} from "@/utils/tools";
 
-const  upload = process.env.VUE_APP_BASE_API + 'sys/upload/uploadImage'
+const upload = process.env.VUE_APP_BASE_API + 'sys/upload/uploadImage'
 import mySearch from "@/components/MySearch/MySearch.vue";
 import {fastGet,fastPost} from "@/api";
 import {getToken} from "@/utils/auth";
+import {Notification} from "element-ui";
 const baseUrl = '/product/'
 export default {
   name: "index",
@@ -161,6 +171,8 @@ export default {
   data(){
     return{
       upload,
+      checkboxCount:0,
+      submitButtonLoading:false,
       reverse: true,
       loading:false,
       limitQuery: {
@@ -175,7 +187,23 @@ export default {
         { label: '厂家名', name: 'factoryName' },
         { label: '厂家联系电话', name: 'factoryMobile' },
       ],
-      rules: {},
+      rules: {
+        name: [
+          { required: true, message: '请输入产品名', trigger: 'blur' },
+        ],
+        specifications: [
+          { required: true, message: '请输入产品规格', trigger: 'blur' },
+        ],
+        unit: [
+          { required: true, message: '请输入产品单位', trigger: 'blur' },
+        ],
+        productCost: [
+          { required: true, message: '请输入产品成本', trigger: 'blur' },
+        ],
+        salesPrice: [
+          { required: true, message: '请输入产品默认销售价', trigger: 'blur' },
+        ],
+      },
       dialogVisible: false,
       dialogTitle: '未定义',
       activeAction: null,
@@ -186,7 +214,6 @@ export default {
         mobile: null,
         address: null,
       },
-      confirmOptions: {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'},
       bigImgDialogVisible:false,
       dialogImageUrl:"未定义",
       disabledUP: false,
@@ -210,14 +237,16 @@ export default {
   },
   methods:{
     getToken,
-    getProductList(){
+    async getProductList(){
       this.loading = true
-      fastGet(baseUrl+'getList',this.limitQuery,false).then(res=>{
-        this.loading = false
-        res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
-        this.productList = res.data.list
-        this.total = res.data.total
-      })
+      const res = await fastGet(baseUrl+'getList',this.limitQuery,false)
+      this.loading = false
+      res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
+      this.productList = res.data.list
+      this.total = res.data.total
+    },
+    checkboxChange() {
+      this.checkboxCount = this.$refs.table.getCheckboxRecords(1).length > 0 ? `已选中`+this.$refs.table.getCheckboxRecords(1).length+`个运单` : 0
     },
     addClick() {
       this.showFromEvent('新增产品', {images:[]},  'add')
@@ -261,14 +290,38 @@ export default {
       this.dialogImageUrl = url
       this.bigImgDialogVisible = true
     },
-    submitFrom:myDebounce(function () {
-      let data = Object.assign({}, this.activeForm)
-      delete data.imagesList
-      fastPost(baseUrl + this.activeAction, data,true).then(() => {
-          this.dialogVisible = false
-          this.getCustomerList()
+    submitFromClick:myDebounce(function () {
+      if (this.activeAction === 'multiUpdate'){
+        if(Object.keys(this.activeForm).length === 1) return this.showNotification('请至少修改一项','warning')
+        this.submitFromEvent()
+        return
+      }
+      //如果没选厂家则返回
+      if(!this.activeForm.factoryId) return this.showNotification('请先选择厂家','warning')
+      this.$refs.activeForm.validate((valid) =>  {
+        if (!valid) return
+        this.submitFromEvent()
       })
     }),
+    async submitFromEvent() {
+      let data = Object.assign({}, this.activeForm)
+      delete data.imagesList
+      this.submitButtonLoading = true
+      await fastPost(baseUrl + this.activeAction, data,true)
+      this.submitButtonLoading = false
+      this.dialogVisible = false
+      await this.getProductList()
+    },
+    showNotification(message,type){
+      Notification({
+        title: '提示',
+        message:message,
+        type: type,
+        position: 'bottom-left',
+        duration: 5 * 1000,
+        showClose: true
+      })
+    },
     cancelFrom() {
       this.dialogVisible = false
     },
@@ -279,13 +332,13 @@ export default {
     deleteRowClick(row) {
       this.submitDelete([row.id])
     },
-    showConfirmForm(message, ids) {
-      this.$confirm(message, '提示', this.confirmOptions).then(() => this.submitDelete(ids))
+    async showConfirmForm(message, ids) {
+      await this.$confirm(message, '提示', {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'})
+      this.submitDelete(ids)
     },
-    submitDelete:myDebounce(function (ids) {
-      fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-        ids.map(id => this.productList = this.productList.filter(item => item.id !== id))
-      })
+    submitDelete:myDebounce(async function (ids) {
+      await fastPost(baseUrl + 'delete', {ids:ids},true)
+      ids.map(id => this.productList = this.productList.filter(item => item.id !== id))
     }),
     getCheckboxRecordsEvent(action, object) {
       if (this.$refs.table.getCheckboxRecords(1) < 1) return this.$notify.error({
@@ -298,9 +351,9 @@ export default {
       return ids
     },
     selectFactoryClick(){
-      this.activeFactoryId = this.activeForm.factoryId
-      this.selectTitle = '当前厂家:'+this.activeForm.factoryName
-      this.selectDialogVisible = true
+      this.activeFactoryId = this.activeForm.factoryId;
+      this.selectTitle = this.activeAction === 'add' ? '新增厂家' : '当前厂家:'+this.activeForm.factoryName;
+      this.selectDialogVisible = true;
     },
     selectFactoryEvent(data){
       this.activeForm.factoryId = data.id
@@ -314,13 +367,22 @@ export default {
     selectClick(row){
       this.$emit('selectEvent', row)
     },
+    handleExport(e){
+      switch (e){
+        case 'exportData':
+          this.exportData()
+          break
+        case 'exportSelect':
+          this.exportSelect()
+          break
+      }
+    },
     //全部导出
-    exportData: myDebounce(function () {
+    exportData: myDebounce(async function () {
       this.exportLoading = true
-      fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
-        this.exportLoading = false
-        this.exportEvent('产品列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
-      });
+      const res = await fastGet(baseUrl + 'getList', {limit:0,page: 1},false)
+      this.exportLoading = false
+      this.exportEvent('产品列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
     }),
     //选中导出
     exportSelect: myDebounce(function () {
@@ -349,6 +411,15 @@ export default {
     background-color: #fff;
     .search-region{
       .toolbar {
+        .margin{
+          margin:0 10px;
+        }
+        .count-tag{
+          margin-right: 10px;
+          border-radius: 20px;
+          border: none;
+          box-shadow: 2px 2px 3px 1px rgba(0, 0, 0, 0.10);
+        }
       }
     }
     .table-content{
