@@ -174,6 +174,7 @@ export default {
       this.customerList = res.data.list
       this.total = res.data.total
       this.isSelect = false
+      this.checkboxCount = 0
     },
     checkboxChange() {
       this.checkboxCount = this.$refs.table.getCheckboxRecords(1).length > 0 ? `已选中`+this.$refs.table.getCheckboxRecords(1).length+`个运单` : 0
