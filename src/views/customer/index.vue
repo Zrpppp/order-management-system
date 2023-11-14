@@ -10,13 +10,13 @@
             <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="editClick"><i class="el-icon-edit"/> 批量编辑</vxe-button></transition>
             <transition name="fade"><vxe-button v-if="pageType==='normal' && checkboxCount" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 批量删除</vxe-button></transition>
             <vxe-button v-if="pageType==='normal'" size="mini" @click="addClick"><i class="el-icon-plus"/> 新 增</vxe-button>
-            <el-dropdown v-if="pageType==='normal'" trigger="click" class="margin">
+            <el-dropdown v-if="pageType==='normal'" trigger="click" class="margin" @command="handleExport">
               <vxe-button :loading="exportLoading" type="primary" size="mini">
                 <i class="el-icon-printer"/> 导 出 <i class="el-icon-arrow-down el-icon--right"/>
               </vxe-button>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item><span @click="exportData">全部导出</span></el-dropdown-item>
-                <el-dropdown-item><span @click="exportSelect">导出选中</span></el-dropdown-item>
+                <el-dropdown-item command="exportData">全部导出</el-dropdown-item>
+                <el-dropdown-item command="exportSelect">导出选中</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </template>
@@ -175,7 +175,6 @@ export default {
       this.total = res.data.total
       this.isSelect = false
     },
-    //获取所有选中的行
     checkboxChange() {
       this.checkboxCount = this.$refs.table.getCheckboxRecords(1).length > 0 ? `已选中`+this.$refs.table.getCheckboxRecords(1).length+`个运单` : 0
     },
@@ -278,6 +277,16 @@ export default {
     },
     selectClick(row){
       this.$emit('selectEvent', row)
+    },
+    handleExport(e){
+      switch (e){
+        case 'exportData':
+          this.exportData()
+          break
+        case 'exportSelect':
+          this.exportSelect()
+          break
+      }
     },
     //全部导出
     exportData: myDebounce(async function () {
