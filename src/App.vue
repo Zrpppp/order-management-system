@@ -35,6 +35,14 @@ export default {
   background-color: #787878;
 }
   #app {
+    .fade-enter-active, .fade-leave-active{
+      transition: all .25s ease-in-out;
+    }
+
+    .fade-leave-to, .fade-enter{
+      opacity: 0;
+      transform: translateY(-10px);
+    }
     .vxe-table--render-default.border--default .vxe-table--header-wrapper,
     .vxe-table--render-default.border--full .vxe-table--header-wrapper,
     .vxe-table--render-default.border--outer .vxe-table--header-wrapper {

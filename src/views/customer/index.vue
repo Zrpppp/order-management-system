@@ -313,14 +313,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.fade-enter-active, .fade-leave-active{
-  transition: all .25s ease-in-out;
-}
-
-.fade-leave-to, .fade-enter{
-  opacity: 0;
-  transform: translateY(-10px);
-}
 .customer {
   padding: 12px;
 
