@@ -253,10 +253,9 @@ export default {
     showConfirmForm(message, ids) {
       this.$confirm(message, '提示',{confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'}).then(() => this.submitDelete(ids))
     },
-    submitDelete:myDebounce(function (ids) {
-      fastPost(baseUrl + 'delete', {ids:ids},true).then(() => {
-          ids.map(id => this.factoryList = this.factoryList.filter(item => item.id !== id))
-      })
+    submitDelete:myDebounce(async function (ids) {
+      await fastPost(baseUrl + 'delete', {ids:ids},true)
+      await this.getFactoryList()
     }),
     getCheckboxRecordsEvent(action, object) {
       if (this.$refs.table.getCheckboxRecords(1) < 1) return this.$notify.error({

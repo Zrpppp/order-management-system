@@ -339,7 +339,7 @@ export default {
     },
     submitDelete:myDebounce(async function (ids) {
       await fastPost(baseUrl + 'delete', {ids:ids},true)
-      ids.map(id => this.productList = this.productList.filter(item => item.id !== id))
+      await this.getProductList()
     }),
     getCheckboxRecordsEvent(action, object) {
       if (this.$refs.table.getCheckboxRecords(1) < 1) return this.$notify.error({
