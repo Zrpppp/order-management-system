@@ -60,13 +60,10 @@ export default {
       await this.$store.dispatch('user/logout')
       this.$router.push(`/login?redirect=${this.$route.fullPath}`)
     },
-    deleteCache(){
+    async deleteCache(){
       this.$notify.success({ title: '提示', message: '删除成功!正在重置缓存,请稍等~', position: 'bottom-left' })
-      mainInit().then(()=>{
-        window.location.reload();
-      }).catch(err=>{
-        this.$notify.error({ title: "失败", message: err,  position: 'bottom-left' });
-      })
+      await mainInit()
+      setTimeout(()=>{ window.location.reload();},1500)
     },
   }
 }

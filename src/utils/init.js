@@ -4,7 +4,7 @@ const init = 'init'
 export function getRemoteOptions() {
   return new Promise((resolve, reject) => {
     console.log('远程读取Options')
-    fastGet('/sys/init', {}).then((res => {
+    fastGet('/sys/init', {},false).then((res => {
       if (res.code !== 0) return reject(res.message)
       setOptions(res.data)
       resolve(res.data)
