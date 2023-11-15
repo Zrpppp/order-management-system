@@ -1,7 +1,7 @@
 <template>
   <div class="orderForm">
     <!--    订单信息    -->
-    <el-form :model="formData" label-width="90px" :rules="rules" ref="orderForm" size="mini">
+    <el-form :model="formData" label-width="100px" :rules="rules" ref="orderForm" size="mini">
       <el-row>
         <el-col :span="12">
           <el-form-item label="订单号" prop="orderNo">
@@ -34,13 +34,13 @@
       </el-row>
       <el-row>
         <el-col :span="12">
-          <el-form-item label="收货电话" prop="status">
+          <el-form-item label="收货电话" prop="consigneeMobile">
             <div v-if="pageType==='finance'">{{ formData.consigneeMobile}}</div>
             <el-input v-else v-model="formData.consigneeMobile" placeholder="请输入" class="form-item"/>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="收货地址" prop="consigneeName">
+          <el-form-item label="收货地址" prop="consigneeAddress">
             <div v-if="pageType==='finance'">{{ formData.consigneeAddress}}</div>
             <el-input v-else v-model="formData.consigneeAddress" placeholder="请输入" class="form-item"/>
           </el-form-item>
@@ -214,6 +214,7 @@ import {formatDate, myDebounce} from "@/utils/tools";
 const baseUrl = '/product/'
 import mySearch from "@/components/MySearch/MySearch.vue";
 import {fastGet, fastPost} from "@/api";
+import {Notification} from "element-ui";
 
 export default {
   name: "orderForm",
@@ -249,6 +250,22 @@ export default {
     }
   },
   data() {
+    const validateOrderPrice = (rule, value, callback) => {
+      switch (value){
+        case '':
+          callback(new Error('请填写订单价格'));
+          break;
+        case '自动计价':
+          callback();
+          break;
+        default:
+          if(!/(^[1-9]\d*(\.\d{1,2})?$)|(^0(\.\d{1,2})?$)/.test(value)){
+            callback(new Error('请填写正确价格'));
+          }else{
+            callback();
+          }
+      }
+    };
     return {
       activeName:[],
       switchValue:false,
@@ -257,10 +274,23 @@ export default {
       formData:{},
       rules:{
         operateCost: [
+          { required: true, message: '请填写运营成本', trigger: 'blur' },
           { pattern:/(^[1-9]\d*(\.\d{1,2})?$)|(^0(\.\d{1,2})?$)/, message: '请填写正确价格',trigger: 'blur'}
         ],
         orderPrice:[
-          { pattern:/(^[1-9]\d*(\.\d{1,2})?$)|(^0(\.\d{1,2})?$)/, message: '请填写正确价格',trigger: 'blur'}
+          { required: true,validator:validateOrderPrice,trigger: 'blur'}
+        ],
+        companyNo: [
+          { required: true, message: '请选择销售公司', trigger: 'change' },
+        ],
+        consigneeName: [
+          { required: true, message: '请填写收货人', trigger: 'blur' },
+        ],
+        consigneeMobile: [
+          { required: true, message: '请填写收货电话', trigger: 'blur' },
+        ],
+        consigneeAddress:[
+          { required: true, message: '请填写收货地址', trigger: 'blur' },
         ],
       },
       editRules:{
@@ -329,6 +359,7 @@ export default {
     autoPricingEvent({value}){
       if (!value) return this.formData.orderPrice = this.tempOrderPrice
       this.tempOrderPrice = this.formData.orderPrice
+      this.$refs.orderForm.clearValidate();//清除表单校验
       this.formData.orderPrice = "自动计价"
     },
     changeSwitch(e){
@@ -347,24 +378,27 @@ export default {
         this.getProductList();
       }
     },
-    getProductList() {
+    async getProductList() {
       this.loading = true
-      fastGet(baseUrl+'getListByOrderId', this.limitQuery).then(res => {
-        this.loading = false
-        res.data.list.map(item => item.imagesList = item.images.map(img => img.url))
-        this.productList = res.data.list
-      })
+      const res = await fastGet(baseUrl+'getListByOrderId', this.limitQuery,false)
+      this.loading = false
+      res.data.list.forEach(item => item.imagesList = item.images.map(img => img.url))
+      this.productList = res.data.list
     },
     cancelFrom(){
       this.$emit('cancelFrom')
     },
     submitFrom(){
+      if (!this.formData.customerId) return Notification({ title: '提示', message:"请选择客户!", type: "warning", position: 'bottom-left', duration: 5 * 1000, showClose: true })
+      if (!this.formData.orderPrice) return Notification({ title: '提示', message:"请填写订单总售价,如不填写可开启自动计价", type: "warning", position: 'bottom-left', duration: 5 * 1000, showClose: true })
       this.$refs.orderForm.validate((valid) => {
+        console.log(this.formData,this.productList)
         if (!valid) return false;
+        if (this.productList.length < 1) return Notification({ title: '提示', message:"请至少添加一个产品!", type: "warning", position: 'bottom-left', duration: 5 * 1000, showClose: true })
         let tempList = []
         let tempData = Object.assign({}, this.formData);
         if(tempData.orderPrice === "自动计价")tempData.orderPrice = "auto"
-        this.productList.map(item =>tempList.push({ id:item.id, count:item.count, cost:item.cost,price:item.price,remark:item.remark }))
+        this.productList.forEach(item =>tempList.push({ id:item.id, count:item.count, cost:item.cost,price:item.price,remark:item.remark }))
         this.$emit('submitFrom', {productList:tempList,...tempData})
       });
     },
@@ -377,10 +411,8 @@ export default {
       if (ids.length > 0) {
         let index = []
         ids.map(id => {
-          this.productList.map((item,index) => {
-            if(item.id === id){
-              index.push(index)
-            }
+          this.productList.forEach((item,index) => {
+            if(item.id === id) index.push(index)
           })
         })
         this.showFromEvent('编辑' + ids.length + '个产品', {ids:ids},  'multiUpdate',index)
@@ -400,7 +432,7 @@ export default {
       this.dialogVisible = false
     },
     submitEditFrom(){
-      if(!this.editForm.name) return this.$notify.error({title: '提示', message: '请选择产品', position: 'bottom-left'})
+      if(!this.editForm.name) return this.$notify.warning({title: '提示', message: '请选择产品', position: 'bottom-left'})
       this.$refs.editForm.validate((valid) => {
         if (!valid) return false;
         this.$notify.success({title: '提示', message: '操作成功', position: 'bottom-left'})
@@ -509,7 +541,7 @@ export default {
     },
     getRecordById(id){
       return new Promise((resolve, reject) => {
-        fastGet(baseUrl+'getRecordById',{id:id}).then(res=>{
+        fastGet(baseUrl+'getRecordById',{id:id},false).then(res=>{
             resolve(res.data.list)
         })
       })

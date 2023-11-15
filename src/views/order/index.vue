@@ -6,25 +6,32 @@
         <vxe-toolbar ref="Toolbar" :refresh="{query: getOrderList}" custom class="toolbar">
           <template #buttons>
             <my-search :limit-query="limitQuery" @updateList="searchEvent" :key-type="keyType"/>
+            <transition name="fade"><el-tag v-if="checkboxCount" class="count-tag" effect="dark" size="medium" color="#3D7EFF">{{checkboxCount}}</el-tag></transition>
+            <transition name="fade"><vxe-button style="margin-right:10px" v-if="checkboxCount" size="mini" @click="deleteClick"><i class="el-icon-delete"/> 批量删除</vxe-button></transition>
             <vxe-select size="mini" v-model="limitQuery.status" placeholder="筛选订单状态" :options="orderStatusOptions"
-                        style="width: 110px;margin-right: 10px" @change="searchEvent" clearable/>
+                        style="width: 110px;margin-right:10px" @change="searchEvent" clearable/>
             <vxe-select size="mini" v-model="limitQuery.companyId" placeholder="筛选销售公司" :options="companyOptions"
                         style="width: 150px;margin-right: 10px" @change="searchEvent" clearable/>
             <select-time :limit-query="limitQuery" @updateList="searchEvent"/>
             <vxe-button size="mini" @click="addClick"><i class="el-icon-plus"/> 新 增</vxe-button>
 <!--            <vxe-button size="mini" @click="editClick"><i class="el-icon-edit"/> 编 辑</vxe-button>-->
-            <vxe-button size="mini" @click="deleteClick"><i class="el-icon-delete"/> 删 除</vxe-button>
-            <vxe-button size="mini" @click="exportData" :loading="exportLoading"><i class="el-icon-printer"/> 全部导出</vxe-button>
-            <vxe-button size="mini" @click="exportSelect"><i class="el-icon-thumb"/> 导出选中</vxe-button>
+            <el-dropdown trigger="click" class="margin" @command="handleExport">
+              <vxe-button :loading="exportLoading" type="primary" size="mini">
+                <i class="el-icon-printer"/> 导 出 <i class="el-icon-arrow-down el-icon--right"/>
+              </vxe-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="exportData">全部导出</el-dropdown-item>
+                <el-dropdown-item command="exportSelect">导出选中</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </template>
         </vxe-toolbar>
       </div>
       <!--表格-->
       <div class="table-content">
-        <vxe-table ref="table" class="table myTable-scrollbar " :data="orderList" keep-source stripe resizable
-                   show-overflow border :loading="loading"
-                   :row-config="{ isCurrent: true, isHover: true} " :checkbox-config="{range: true ,highlight:true}"
-                   align="center" height="100%">
+        <vxe-table ref="table" class="table myTable-scrollbar " :data="orderList" resizable keep-source stripe show-overflow round :loading="loading"
+                   :row-config="{ isCurrent: true, isHover: true} " :checkbox-config="{range: true ,highlight:true}"  align="center" height="100%"
+                   @checkbox-change="checkboxChange" @checkbox-all="checkboxChange" @checkbox-range-end="checkboxChange" :scroll-y="{enabled: true}">
           <vxe-table-column type="checkbox" width="45" align="center" fixed="left"/>
           <vxe-table-column title="操作" align="center" width="260" fixed="left">
             <template v-slot="{ row }">
@@ -90,6 +97,7 @@ export default {
   data() {
     return {
       loading: false,
+      checkboxCount:0,
       limitQuery: {
         page: 1,
         limit: 100,
@@ -108,7 +116,6 @@ export default {
       activeAction: "",
       activeIds: null,
       activeForm: {},
-      confirmOptions: {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'},
       companyOptions: [],
       orderStatusOptions: [ ],
       statusValue:"",
@@ -139,17 +146,19 @@ export default {
       if (Obj.orderStatus) for (let i in Obj.orderStatus) this.orderStatusOptions.push({label: Obj.orderStatus[i], value: i})
       if(Obj.company)  for (let i in Obj.company) this.companyOptions.push({label: Obj.company[i], value: i})
     },
-    getOrderList() {
+    async getOrderList() {
       this.loading = true
-      fastGet(baseUrl+'getList', this.limitQuery,false).then(res => {
-        this.loading = false
-        if (res.code !== 0) return this.$notify.error({ title: '提示', message: res.message, position: 'bottom-left' })
-        this.orderList = res.data.list
-        this.total = res.data.total
-      })
+      const res = await fastGet(baseUrl+'getList', this.limitQuery,false)
+      this.loading = false
+      this.orderList = res.data.list
+      this.total = res.data.total
+      this.checkboxCount = 0
+    },
+    checkboxChange() {
+      this.checkboxCount = this.$refs.table.getCheckboxRecords(1).length > 0 ? `已选中`+this.$refs.table.getCheckboxRecords(1).length+`个运单` : 0
     },
     addClick() {
-      this.showFromEvent('新增订单', {},  'add')
+      this.showFromEvent('新增订单', {consigneeName:"",consigneeMobile:"",consigneeAddress:"",orderPrice:""},  'add')
     },
     editClick() {
       let ids = this.getCheckboxRecordsEvent('修改', '订单')
@@ -164,21 +173,20 @@ export default {
       this.activeForm = Object.assign({}, data)
       this.dialogVisible = true
     },
-    submitFrom:myDebounce(function (data) {
-      fastPost(baseUrl + this.activeAction, data,true).then(res => {
-          this.dialogVisible = false
-          switch (this.activeAction) {
-            case 'add':
-              this.getOrderList()
-              break
-            case 'update':
-              this.orderList = this.orderList.map(item => item.id === data.id ? data : item)
-              break
-            case 'multiUpdate':
-              this.multiUpdateEvent(data)
-              break
-          }
-      })
+    submitFrom:myDebounce(async function (data) {
+      await fastPost(baseUrl + this.activeAction, data,true)
+      this.dialogVisible = false
+      switch (this.activeAction) {
+        case 'add':
+          await this.getOrderList()
+          break
+        case 'update':
+          this.orderList = this.orderList.map(item => item.id === data.id ? data : item)
+          break
+        case 'multiUpdate':
+          this.multiUpdateEvent(data)
+          break
+      }
     }),
     cancelFrom() {
       this.dialogVisible = false
@@ -202,13 +210,13 @@ export default {
     deleteRowClick(row) {
       this.submitDelete([row.id])
     },
-    showConfirmForm(message, ids) {
-      this.$confirm(message, '提示', this.confirmOptions).then(() => this.submitDelete(ids))
+    async showConfirmForm(message, ids) {
+      await this.$confirm(message, '提示', {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'})
+      this.submitDelete(ids)
     },
-    submitDelete:myDebounce(function (ids) {
-      fastPost(baseUrl + 'delete', {ids:ids},true).then(res => {
-          ids.map(id => this.orderList = this.orderList.filter(item => item.id !== id))
-      })
+    submitDelete:myDebounce(async function (ids) {
+      await fastPost(baseUrl + 'delete', {ids:ids},true)
+      await this.getOrderList()
     }),
     filterCompanyName({cellValue}){
       let arr = this.companyOptions.filter(item => item.value === String(cellValue))
@@ -237,13 +245,22 @@ export default {
       this.printData = Object.assign({},row)
       this.templateDialogVisible= true
     },
+    handleExport(e){
+      switch (e){
+        case 'exportData':
+          this.exportData()
+          break
+        case 'exportSelect':
+          this.exportSelect()
+          break
+      }
+    },
     //全部导出
-    exportData: myDebounce(function () {
+    exportData: myDebounce(async function () {
       this.exportLoading = true
-      fastGet(baseUrl + 'getList', {limit:0,page: 1},false).then((res) => {
-        this.exportLoading = false
-        this.exportEvent('订单列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
-      });
+      const res = await fastGet(baseUrl + 'getList', {limit:0,page: 1},false)
+      this.exportLoading = false
+      this.exportEvent('订单列表【'+formatDate(new Date(),'yyyy-MM-dd hh:mm:ss')+'】',res.data.list,this.exportColumns)
     }),
     //选中导出
     exportSelect: myDebounce(function () {
@@ -275,6 +292,15 @@ export default {
 
     .search-region {
       .toolbar {
+        .margin{
+          margin:0 10px;
+        }
+        .count-tag{
+          margin-right: 10px;
+          border-radius: 20px;
+          border: none;
+          box-shadow: 2px 2px 3px 1px rgba(0, 0, 0, 0.10);
+        }
       }
     }
 
